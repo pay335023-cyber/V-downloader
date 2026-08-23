@@ -12,44 +12,42 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.5'
 
-      - name: Create project files
+      - name: Create project architecture
         run: |
-          mkdir -p app/src/main/java/com/mm/mydownloader app/src/main/res/layout app/src/main/res/values app/src/main/assets
+          mkdir -p app/src/main/java/com/mm/mydownloader app/src/main/res/values
 
-          cat > settings.gradle << 'ZEOF'
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
+          # 1. settings.gradle
+          cat > settings.gradle << 'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral(); maven { url 'https://jitpack.io' } }
           }
           rootProject.name = "MyDownloader"
           include ':app'
-          ZEOF
+          EOF
 
-          cat > build.gradle << 'ZEOF'
+          # 2. root build.gradle
+          cat > build.gradle << 'EOF'
           plugins {
               id 'com.android.application' version '8.2.2' apply false
               id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
           }
-          ZEOF
+          EOF
 
-          cat > app/build.gradle << 'ZEOF'
-          plugins {
-              id 'com.android.application'
-              id 'org.jetbrains.kotlin.android'
-          }
+          # 3. app build.gradle
+          cat > app/build.gradle << 'EOF'
+          plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
           android {
               namespace 'com.mm.mydownloader'
               compileSdk 34
@@ -59,13 +57,8 @@ jobs:
                   targetSdk 34
                   versionCode 1
                   versionName "1.0"
-                  ndk { abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86' }
               }
-              packagingOptions { jniLibs { useLegacyPackaging = true } }
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
               kotlinOptions { jvmTarget = '17' }
           }
           dependencies {
@@ -74,75 +67,47 @@ jobs:
               implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
               implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
               implementation 'com.google.android.gms:play-services-ads:23.0.0'
-              def ytdl = "0.17.0"
-              implementation "io.github.junkfood02.youtubedl-android:library:$ytdl"
-              implementation "io.github.junkfood02.youtubedl-android:ffmpeg:$ytdl"
+              implementation "io.github.junkfood02.youtubedl-android:library:0.17.0"
+              implementation "io.github.junkfood02.youtubedl-android:ffmpeg:0.17.0"
           }
-          ZEOF
+          EOF
 
-          cat > app/src/main/res/values/strings.xml << 'ZEOF'
-          <resources>
-              <string name="app_name">MyDownloader</string>
-          </resources>
-          ZEOF
+          # 4. strings.xml & themes.xml
+          cat > app/src/main/res/values/strings.xml << 'EOF'
+          <resources><string name="app_name">MyDownloader</string></resources>
+          EOF
+          cat > app/src/main/res/values/themes.xml << 'EOF'
+          <resources><style name="Theme.MyDownloader" parent="Theme.AppCompat.Light.NoActionBar"/></resources>
+          EOF
 
-          cat > app/src/main/res/values/themes.xml << 'ZEOF'
-          <resources>
-              <style name="Theme.MyDownloader" parent="Theme.AppCompat.Light.NoActionBar">
-                  <item name="colorPrimary">#FF6200EE</item>
-              </style>
-          </resources>
-          ZEOF
-
-          cat > app/src/main/AndroidManifest.xml << 'ZEOF'
+          # 5. AndroidManifest.xml
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://android.com">
               <uses-permission android:name="android.permission.INTERNET"/>
-              <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
               <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
-              <application
-                  android:name=".App"
-                  android:label="@string/app_name"
-                  android:supportsRtl="true"
-                  android:requestLegacyExternalStorage="true"
-                  android:extractNativeLibs="true"
-                  android:theme="@style/Theme.MyDownloader">
-                  <meta-data
-                      android:name="com.google.android.gms.ads.APPLICATION_ID"
-                      android:value="ca-app-pub-3940256099942544~3347511713"/>
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTask"
-                      android:configChanges="orientation|screenSize|keyboardHidden">
+              <application android:name=".App" android:label="@string/app_name" android:theme="@style/Theme.MyDownloader" android:requestLegacyExternalStorage="true">
+                  <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
                       </intent-filter>
-                      <intent-filter>
-                          <action android:name="android.intent.action.SEND"/>
-                          <category android:name="android.intent.category.DEFAULT"/>
-                          <data android:mimeType="text/plain"/>
-                      </intent-filter>
                   </activity>
               </application>
           </manifest>
-          ZEOF
+          EOF
 
-          cat > app/src/main/java/com/mm/mydownloader/App.kt << 'ZEOF'
+          # 6. App.kt
+          cat > app/src/main/java/com/mm/mydownloader/App.kt << 'EOF'
           package com.mm.mydownloader
-
           import android.app.Application
           import com.yausername.ffmpeg.FFmpeg
           import com.yausername.youtubedl_android.YoutubeDL
           import kotlinx.coroutines.CoroutineScope
           import kotlinx.coroutines.Dispatchers
           import kotlinx.coroutines.launch
-
-          object EngineState {
-              @Volatile var ready = false
-          }
-
+          object EngineState { @Volatile var ready = false }
           class App : Application() {
               override fun onCreate() {
                   super.onCreate()
@@ -150,99 +115,55 @@ jobs:
                       try {
                           YoutubeDL.getInstance().init(applicationContext)
                           FFmpeg.getInstance().init(applicationContext)
-                          try {
-                              YoutubeDL.getInstance().updateYoutubeDL(
-                                  applicationContext,
-                                  YoutubeDL.UpdateChannel.STABLE
-                              )
-                          } catch (_: Exception) {}
                           EngineState.ready = true
-                      } catch (e: Exception) {
-                          e.printStackTrace()
-                      }
+                      } catch (e: Exception) { e.printStackTrace() }
                   }
               }
           }
-          ZEOF
+          EOF
 
-          cat > app/src/main/java/com/mm/mydownloader/MainActivity.kt << 'ZEOF'
+          # 7. MainActivity.kt (Compact Version)
+          cat > app/src/main/java/com/mm/mydownloader/MainActivity.kt << 'EOF'
           package com.mm.mydownloader
-
-          import android.content.Intent
-          import android.net.Uri
-          import android.os.Build
           import android.os.Bundle
-          import android.os.Environment
-          import android.provider.Settings
-          import android.webkit.JavascriptInterface
           import android.webkit.WebView
           import android.webkit.WebViewClient
-          import android.widget.Toast
           import android.widget.LinearLayout
+          import android.widget.Toast
           import androidx.appcompat.app.AppCompatActivity
-          import androidx.lifecycle.lifecycleScope
           import com.google.android.gms.ads.AdRequest
           import com.google.android.gms.ads.AdView
           import com.google.android.gms.ads.MobileAds
-          import com.yausername.youtubedl_android.YoutubeDL
-          import com.yausername.youtubedl_android.YoutubeDLRequest
-          import kotlinx.coroutines.Dispatchers
-          import kotlinx.coroutines.launch
-          import kotlinx.coroutines.withContext
-          import java.io.File
-
           class MainActivity : AppCompatActivity() {
-
-              private lateinit var webView: WebView
-              private lateinit var adView: AdView
-
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate()
-
-                  val rootLayout = LinearLayout(this).apply {
-                      orientation = LinearLayout.VERTICAL
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT,
-                          LinearLayout.LayoutParams.MATCH_PARENT
-                      )
-                  }
-
-                  webView = WebView(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT,
-                          0,
-                          1f
-                      )
+                  val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+                  val webView = WebView(this).apply {
                       settings.javaScriptEnabled = true
                       webViewClient = WebViewClient()
-                      addJavascriptInterface(WebAppInterface(), "AndroidInterface")
                   }
-
-                  adView = AdView(this).apply {
-                      layoutParams = LinearLayout.LayoutParams(
-                          LinearLayout.LayoutParams.MATCH_PARENT,
-                          LinearLayout.LayoutParams.WRAP_CONTENT
-                      )
+                  val adView = AdView(this).apply {
                       setAdSize(com.google.android.gms.ads.AdSize.BANNER)
                       adUnitId = "ca-app-pub-3940256099942544/6300978111"
                   }
-
-                  rootLayout.addView(webView)
-                  rootLayout.addView(adView)
-                  setContentView(rootLayout)
-
+                  root.addView(webView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f))
+                  root.addView(adView, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+                  setContentView(root)
                   MobileAds.initialize(this) {}
                   adView.loadAd(AdRequest.Builder().build())
-
-                  checkStoragePermission()
-                  handleIntent(intent)
-
-                  webView.loadData(
-                      "<html><body><h2 style='text-align:center;'>MyDownloader Browser</h2>" +
-                      "<p style='text-align:center;'>Share a link from Facebook/YouTube or call download from JS.</p></body></html>",
-                      "text/html", "UTF-8"
-                  )
+                  webView.loadUrl("https://google.com")
+                  Toast.makeText(this, "Welcome to MyDownloader", Toast.LENGTH_LONG).show()
               }
+          }
+          EOF
 
-              private fun checkStoragePermission() {
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      - name: Build Android App
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mydownloader-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
