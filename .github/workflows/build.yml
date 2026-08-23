@@ -199,7 +199,6 @@ jobs:
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate()
 
-                  // Programmatic layout creation to avoid XML compilation issues
                   val rootLayout = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       layoutParams = LinearLayout.LayoutParams(
@@ -225,23 +224,25 @@ jobs:
                           LinearLayout.LayoutParams.WRAP_CONTENT
                       )
                       setAdSize(com.google.android.gms.ads.AdSize.BANNER)
-                      adUnitId = "ca-app-pub-3940256099942544/6300978111" // Test Banner ID
+                      adUnitId = "ca-app-pub-3940256099942544/6300978111"
                   }
 
                   rootLayout.addView(webView)
                   rootLayout.addView(adView)
                   setContentView(rootLayout)
 
-                  // Initialize Mobile Ads
                   MobileAds.initialize(this) {}
                   adView.loadAd(AdRequest.Builder().build())
 
-                  // Request Storage Permission for Android 11+
                   checkStoragePermission()
-
-                  // Handle Shared Link Intends
                   handleIntent(intent)
 
-                  // Load a default page or UI
                   webView.loadData(
                       "<html><body><h2 style='text-align:center;'>MyDownloader Browser</h2>" +
+                      "<p style='text-align:center;'>Share a link from Facebook/YouTube or call download from JS.</p></body></html>",
+                      "text/html", "UTF-8"
+                  )
+              }
+
+              private fun checkStoragePermission() {
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
